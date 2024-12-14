@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  fingerprint-app:
+    build: .
+    ports:
+      - "8555:8555"
+    volumes:
+      - .:/app

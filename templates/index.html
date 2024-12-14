@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browser Fingerprinting</title>
+</head>
+<body>
+    <h1>Browser Fingerprinting</h1>
+    <button id="fingerprint-btn">Get Fingerprint</button>
+    <div id="output"></div>
+    <div id="device-name-form" style="display:none;">
+        <label for="device-name">Device Name:</label>
+        <input type="text" id="device-name" />
+        <button id="save-device-name-btn">Save</button>
+    </div>
+
+    <script>
+        let deviceId = null;
+
+        async function getFingerprint() {
+            const screenResolution = `${window.screen.width}x${window.screen.height}`;
+            const fonts = ["Arial", "Verdana", "Times New Roman", "Courier New"]; // Simplified for brevity
+            const detectedFonts = fonts.filter(font => {
+                const testCanvas = document.createElement("canvas");
+                const context = testCanvas.getContext("2d");
+                context.font = `72px ${font}, monospace`;
+                const baselineSize = context.measureText("A").width;
+                context.font = "72px monospace";
+                return baselineSize !== context.measureText("A").width;
+            });
+
+            const response = await fetch('/fingerprint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ screen_resolution: screenResolution, fonts: detectedFonts })
+            });
+            const data = await response.json();
+
+            if (data.message.includes("New device detected")) {
+                document.getElementById('output').textContent = data.message;
+                document.getElementById('device-name-form').style.display = 'block';
+                deviceId = data.device_id;
+            } else {
+                document.getElementById('output').textContent = data.message;
+            }
+        }
+
+        async function saveDeviceName() {
+            const deviceName = document.getElementById('device-name').value;
+            const response = await fetch('/save-device-name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_id: deviceId, device_name: deviceName })
+            });
+            const data = await response.json();
+            document.getElementById('output').textContent = data.message;
+            document.getElementById('device-name-form').style.display = 'none';
+        }
+
+        document.getElementById('fingerprint-btn').addEventListener('click', getFingerprint);
+        document.getElementById('save-device-name-btn').addEventListener('click', saveDeviceName);
+    </script>
+</body>
+</html>
