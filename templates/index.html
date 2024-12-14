@@ -12,6 +12,8 @@
         <input type="text" id="device-name" />
         <button id="save-device-name-btn">Save</button>
     </div>
+    <h2>Saved Devices and Fingerprints</h2>
+    <div id="fingerprint-list"></div>
 
     <script>
         let deviceId = null;
@@ -52,12 +54,44 @@
                 body: JSON.stringify({ device_id: deviceId, device_name: deviceName })
             });
             const data = await response.json();
-            document.getElementById('output').textContent = data.message;
+
+            if (data.fingerprint) {
+                document.getElementById('output').textContent = `Device name saved: ${data.fingerprint.device_name}, Resolution: ${data.fingerprint.screen_resolution}, Fonts: ${data.fingerprint.fonts}`;
+            } else {
+                document.getElementById('output').textContent = data.message;
+            }
+
             document.getElementById('device-name-form').style.display = 'none';
+            loadFingerprints(); // Reload fingerprints list
+        }
+
+        async function loadFingerprints() {
+            const response = await fetch('/list-fingerprints');
+            const data = await response.json();
+
+            const fingerprintList = document.getElementById('fingerprint-list');
+            fingerprintList.innerHTML = '';
+
+            if (data.fingerprints.length === 0) {
+                fingerprintList.innerHTML = '<p>No devices saved yet.</p>';
+            } else {
+                data.fingerprints.forEach(fingerprint => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<strong>${fingerprint.device_name}</strong><br>
+                                    ID: ${fingerprint.device_id}<br>
+                                    Resolution: ${fingerprint.screen_resolution}<br>
+                                    Fonts: ${fingerprint.fonts}<br>
+                                    User Agent: ${fingerprint.user_agent}<br><br>`;
+                    fingerprintList.appendChild(div);
+                });
+            }
         }
 
         document.getElementById('fingerprint-btn').addEventListener('click', getFingerprint);
         document.getElementById('save-device-name-btn').addEventListener('click', saveDeviceName);
+
+        // Load saved fingerprints on page load
+        window.onload = loadFingerprints;
     </script>
 </body>
 </html>

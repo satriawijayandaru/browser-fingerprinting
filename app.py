@@ -68,9 +68,28 @@ def save_device_name():
     if fingerprint:
         fingerprint.device_name = device_name
         db.session.commit()
-        return jsonify({'message': "Device name saved successfully."})
+        # Return the updated fingerprint with device name
+        return jsonify({'message': "Device name saved successfully.", 'fingerprint': {
+            'device_id': fingerprint.id,
+            'device_name': fingerprint.device_name,
+            'screen_resolution': fingerprint.screen_resolution,
+            'fonts': fingerprint.fonts,
+            'user_agent': fingerprint.user_agent
+        }})
     else:
         return jsonify({'error': "Device not found."}), 404
+
+@app.route('/list-fingerprints', methods=['GET'])
+def list_fingerprints():
+    fingerprints = Fingerprint.query.all()
+    fingerprint_list = [{
+        'device_id': f.id,
+        'device_name': f.device_name,
+        'screen_resolution': f.screen_resolution,
+        'fonts': f.fonts,
+        'user_agent': f.user_agent
+    } for f in fingerprints]
+    return jsonify({'fingerprints': fingerprint_list})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8555)
